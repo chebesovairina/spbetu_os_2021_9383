@@ -47,10 +47,10 @@ CODE SEGMENT
         signature dw 7777h
         keep_ip dw 0
         keep_cs dw 0
+		address_of_psp dw ?
         keep_ss dw 0
         keep_sp dw 0
         keep_ax dw 0
-		address_of_psp dw ?
         my_stack dw 16 dup(?)
 
     begin_proc:
