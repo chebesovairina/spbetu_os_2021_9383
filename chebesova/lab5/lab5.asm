@@ -29,11 +29,11 @@ CODE SEGMENT
         SHIFT db 0
         int_signature dw 7777h
         keep_ip dw 0
-        keep_cs dw 0
+        keep_cs dw 0		
+		psp_address dw ?
         keep_ss dw 0
         keep_sp dw 0
         keep_ax dw 0
-		psp_address dw ?
         int_stack dw 64 dup(?)
 
     int_start:
