@@ -6,8 +6,8 @@ DATA SEGMENT
     param_block dw 0
     command_off dw 0
     command_seg dw 0
-    fcb1 dd 0
-    fcb2 dd 0
+     dd 0
+     dd 0
 
     next_command_line db 1h, 0dh
     file_name db 'LAB2.com', 0h
