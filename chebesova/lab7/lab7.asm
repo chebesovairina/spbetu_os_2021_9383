@@ -19,18 +19,18 @@ DATA SEGMENT
     str_free_memory_address_error db 'Free memory error: wrong address', 0DH, 0AH, '$'
     str_free_memory_successfully db 'Memory was successfulle freed', 0DH, 0AH, '$'
 
-    str_error_locate_overlay_file db 'Overlay Allocation Error: File not found', 0DH, 0AH, '$'
-    str_error_locate_overlay_route db 'Overlay Allocation Error: Route not found', 0DH, 0AH, '$'
-    str_locate_overlay_memory db 'Allocated memory for overlay successfully', 0DH, 0AH, '$'
+    str_error_locate_overlay_file db 'Error locate overlay: file not found', 0DH, 0AH, '$'
+    str_error_locate_overlay_route db 'Error locate overlay: route not found', 0DH, 0AH, '$'
+    str_locate_overlay_memory db 'Locate overlay memory successfully', 0DH, 0AH, '$'
 
-    str_error_load_overlay_function db 'Overlay Load Error: Function does not exist', 0DH, 0AH, '$'
-    str_error_load_overlay_file db 'Overlay Load Error: File is not found', 0DH, 0AH, '$'
-    str_error_load_overlay_route db 'Overlay Load Error: Route not found', 0DH, 0AH, '$'
-    str_error_load_overlay_too_many_files db 'Overlay Load Error: Too many files opened', 0DH, 0AH, '$'
-    str_error_load_overlay_access db 'Overlay Load Error: No access', 0DH, 0AH, '$'
-    str_error_load_overlay_memory db 'Overlay Load Error: Not enough memory', 0DH, 0AH, '$'
-    str_error_load_overlay_env db 'Overlay Load Error: Wrong environment', 0DH, 0AH, '$'
-    str_load_overlay_successfully db 'Overlay loaded successfully', 0DH, 0AH, '$'
+    str_error_load_overlay_function db 'Error load overlay: function is not exist', 0DH, 0AH, '$'
+    str_error_load_overlay_file db 'Error load overlay: file not found', 0DH, 0AH, '$'
+    str_error_load_overlay_route db 'Error load overlay: route not found', 0DH, 0AH, '$'
+    str_error_load_overlay_too_many_files db 'Error load overlay: too many files opened', 0DH, 0AH, '$'
+    str_error_load_overlay_access db 'Error load overlay: no access', 0DH, 0AH, '$'
+    str_error_load_overlay_memory db 'Error load overlay: not enough memory', 0DH, 0AH, '$'
+    str_error_load_overlay_env db 'Error load overlay: wrong environment', 0DH, 0AH, '$'
+    str_load_overlay_successfully db 'Load overlay successfully', 0DH, 0AH, '$'
 
     data_end db 0
 DATA ENDS
