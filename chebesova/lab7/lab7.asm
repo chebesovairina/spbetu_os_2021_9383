@@ -3,15 +3,12 @@ ASTACK SEGMENT STACK
 ASTACK ENDS
 
 DATA SEGMENT
-    param_block dw 0
-    command_off dw 0
-    command_seg dw 0
-     dd 0
-     dd 0
+    data_buffer db 43 DUP(0)
 
-    next_command_line db 1h, 0dh
-    file_name db 'LAB2.com', 0h
-    file_path db 128 DUP(0)
+    overlay_address dd 0
+    overlay_1_name db 'ov1.ovl', 0h
+    overlay_2_name db 'ov2.ovl', 0h
+    overlay_path db 128 DUP(0)
 
     keep_ss dw 0
     keep_sp dw 0
@@ -22,17 +19,18 @@ DATA SEGMENT
     str_free_memory_address_error db 'Free memory error: wrong address', 0DH, 0AH, '$'
     str_free_memory_successfully db 'Memory was successfulle freed', 0DH, 0AH, '$'
 
-    str_load_function_number_error db 'Load error: function number is wrong', 0DH, 0AH, '$'
-    str_load_file_not_found_error db 'Load error: file not found', 0DH, 0AH, '$'
-    str_load_disk_error db 'Load error: problem with disk', 0DH, 0AH, '$'
-    str_load_memory_error db 'Load error: not enough memory', 0DH, 0AH, '$'
-    str_load_path_error db 'Load error: wrong path param', 0DH, 0AH, '$'
-    str_load_format_error db 'Load error: wrong Format', 0DH, 0AH, '$'
+    str_error_locate_overlay_file db 'Overlay Allocation Error: File not found', 0DH, 0AH, '$'
+    str_error_locate_overlay_route db 'Overlay Allocation Error: Route not found', 0DH, 0AH, '$'
+    str_locate_overlay_memory db 'Allocated memory for overlay successfully', 0DH, 0AH, '$'
 
-    str_exit db 'Programm was finished: exit with code:     ', 0DH, 0AH, '$'
-    str_exit_ctrl_c db 'Exit with Ctrl+Break', 0DH, 0AH, '$'
-    str_exit_error db 'Exit with device error', 0DH, 0AH, '$'
-    str_exit_int31h db 'Exit with int 31h', 0DH, 0AH, '$'
+    str_error_load_overlay_function db 'Overlay Load Error: Function does not exist', 0DH, 0AH, '$'
+    str_error_load_overlay_file db 'Overlay Load Error: File is not found', 0DH, 0AH, '$'
+    str_error_load_overlay_route db 'Overlay Load Error: Route not found', 0DH, 0AH, '$'
+    str_error_load_overlay_too_many_files db 'Overlay Load Error: Too many files opened', 0DH, 0AH, '$'
+    str_error_load_overlay_access db 'Overlay Load Error: No access', 0DH, 0AH, '$'
+    str_error_load_overlay_memory db 'Overlay Load Error: Not enough memory', 0DH, 0AH, '$'
+    str_error_load_overlay_env db 'Overlay Load Error: Wrong environment', 0DH, 0AH, '$'
+    str_load_overlay_successfully db 'Overlay loaded successfully', 0DH, 0AH, '$'
 
     data_end db 0
 DATA ENDS
@@ -125,114 +123,99 @@ CODE SEGMENT
 ;-----------------------------------------
 
 ;-----------------------------------------
-    LOAD PROC FAR
+	LOAD_OVERLAY PROC FAR
         push ax
         push bx
         push cx
         push dx
+        push es
         push ds
         push es
         mov keep_sp, sp
         mov keep_ss, ss
-        call PATH_BEGIN
         mov ax, data
         mov es, ax
-        mov bx, offset param_block
-        mov dx, offset next_command_line
-        mov command_off, dx
-        mov command_seg, ds 
-        mov dx, offset file_path
-        mov ax, 4b00h 
+        mov bx, offset overlay_address
+        mov dx, offset overlay_path
+        mov ax, 4b03h 
         int 21h 
         mov ss, keep_ss
         mov sp, keep_sp
         pop es
         pop ds
-        call PRINT_EOF
-		jnc load_successfully
-		cmp ax, 1
-		je load_function_number_error
+        jnc load_overlay_successfully
+		
+        cmp ax, 1
+		je error_load_overlay_function
 		cmp ax, 2
-		je load_file_not_found_error
+		je error_load_overlay_file
+		cmp ax, 3
+		je error_load_overlay_route
+		cmp ax, 4
+		je error_load_overlay_too_many_files
 		cmp ax, 5
-		je load_disk_error
+		je error_load_overlay_access
 		cmp ax, 8
-		je load_memory_error
+		je error_load_overlay_memory
 		cmp ax, 10
-		je load_path_error
-		cmp ax, 11
-		je load_format_error
-			
-	load_function_number_error:
-		mov dx, offset str_load_function_number_error
-		call PRINT_MESSAGE
-		jmp load_exit
+		je error_load_overlay_env
 		
-	load_file_not_found_error:
-		mov dx, offset str_load_file_not_found_error
+	error_load_overlay_function:
+		mov dx, offset str_error_load_overlay_function
 		call PRINT_MESSAGE
-		jmp load_exit
-		
-	load_disk_error:
-		mov dx, offset str_load_disk_error
-		call PRINT_MESSAGE
-		jmp load_exit
-		
-	load_memory_error:
-		mov dx, offset str_load_memory_error
-		call PRINT_MESSAGE
-		jmp load_exit
-		
-	load_path_error:
-		mov dx, offset str_load_path_error
-		call PRINT_MESSAGE
-		jmp load_exit
-		
-	load_format_error:
-		mov dx, offset str_load_format_error
-		call PRINT_MESSAGE
-		jmp load_exit
-
-    load_successfully:
-        mov ax, 4d00h 
-	    int 21h
-        cmp ah, 0
-	    jne exit_ctrl_c
-	    mov di, offset str_exit
-        add di, 41
-        mov [di], al
-        mov dx, offset str_exit
+	    jmp load_overlay_finish
+    
+    error_load_overlay_file:
+	    mov dx, offset str_error_load_overlay_file
 	    call PRINT_MESSAGE
-	    jmp load_exit
+	    jmp load_overlay_finish
 
-    exit_ctrl_c:
-        cmp ah, 1
-	    jne exit_error
-	    mov dx, offset str_exit_ctrl_c
+    error_load_overlay_route:
+	    mov dx, offset str_error_load_overlay_route
 	    call PRINT_MESSAGE
-	    jmp load_exit
+	    jmp load_overlay_finish
 
-    exit_error:
-        cmp ah, 2
-	    jne exit_int31h
-	    mov dx, offset str_exit_error
+    error_load_overlay_too_many_files:
+	    mov dx, offset str_error_load_overlay_too_many_files
 	    call PRINT_MESSAGE
-	    jmp load_exit
+	    jmp load_overlay_finish
 
-    exit_int31h:
-        cmp ah, 3
-	    jne load_exit
-	    mov dx, offset str_exit_int31h
+    error_load_overlay_access:
+	    mov dx, offset str_error_load_overlay_access
 	    call PRINT_MESSAGE
-	    jmp load_exit
+	    jmp load_overlay_finish
 
-    load_exit:
+    error_load_overlay_memory:
+	    mov dx, offset str_error_load_overlay_memory
+	    call PRINT_MESSAGE
+	    jmp load_overlay_finish
+
+    error_load_overlay_env:
+	    mov dx, offset str_error_load_overlay_env
+	    call PRINT_MESSAGE
+	    jmp load_overlay_finish
+
+    load_overlay_successfully:
+        mov dx, offset str_load_overlay_successfully
+        call PRINT_MESSAGE
+        mov bx, offset overlay_address
+        mov ax, [bx]
+        mov cx, [bx + 2]
+        mov [bx], cx
+        mov [bx + 2], ax
+        call overlay_address
+        mov es, ax
+        mov ah, 49h
+        int 21h
+
+    load_overlay_finish:
+        pop es
         pop dx
         pop cx
         pop bx
         pop ax
         ret
-    LOAD ENDP
+    LOAD_OVERLAY ENDP
 ;-----------------------------------------
 
 ;-----------------------------------------
@@ -272,7 +255,7 @@ CODE SEGMENT
         push dx
         push es
         push di
-        mov bx, offset file_path
+        mov bx, offset overlay_path
         add di, 3
 
     loop_for_symbol_boot:
@@ -287,24 +270,24 @@ CODE SEGMENT
     loop_for_symbol_slash:
         mov dl, [bx]
         cmp dl, '\'
-        je get_file_name
+        je get_overlay_name
         mov dl, 0h
         mov [bx], dl
         dec bx
         jmp loop_for_symbol_slash
     
-    get_file_name:
-        mov di, offset file_name
+    get_overlay_name:
+        mov di, si
         inc bx
 
-    add_file_name:
+    add_overlay_name:
         mov dl, [di]
         cmp dl, 0h
         je path_exit
         mov [bx], dl
         inc bx
         inc di
-        jmp add_file_name
+        jmp add_overlay_name
 
     path_exit:
         mov [bx], dl
@@ -319,16 +302,79 @@ CODE SEGMENT
 ;-----------------------------------------
 
 ;-----------------------------------------
+	LOCATE_OVERLAY PROC FAR
+        push ax
+        push bx
+        push cx
+        push dx
+        push di
+        mov dx, offset data_buffer
+        mov ah, 1ah
+        int 21h
+        mov dx, offset overlay_path
+        mov cx, 0
+        mov ah, 4eh
+        int 21h
+        jnc locate_overlay_succesfully
+        cmp ax, 12h
+        jne error_locate_overlay_route
+        mov dx, offset str_error_locate_overlay_file
+        call PRINT_MESSAGE
+        jmp locate_overlay_finish
+
+    error_locate_overlay_route:
+        cmp ax, 3
+        jne locate_overlay_finish
+        mov dx, offset str_error_locate_overlay_route
+        call PRINT_MESSAGE
+        jmp locate_overlay_finish
+
+    locate_overlay_succesfully:
+        mov di, offset data_buffer
+        mov dx, [di + 1ch]
+        mov ax, [di + 1ah]
+        mov bx, 10h
+        div bx
+        add ax, 1h
+        mov bx, ax
+        mov ah, 48h
+        int 21h
+        mov bx, offset overlay_address
+        mov cx, 0000h
+        mov [bx], ax
+        mov [bx + 2], cx
+        mov dx, offset str_locate_overlay_memory
+        call PRINT_MESSAGE
+
+    locate_overlay_finish:
+        pop di
+        pop dx
+        pop cx
+        pop bx
+        pop ax
+        ret
+    LOCATE_OVERLAY ENDP
+;-----------------------------------------
+
+;-----------------------------------------
     MAIN PROC FAR
         mov ax, data
         mov ds, ax
         call FREE_MEMORY_PROC
         cmp free_memory, 0h
-        jne main_exit
+        jne main_end
+        call PRINT_EOF
+        mov si, offset overlay_1_name
         call PATH_BEGIN
-        call LOAD
+        call LOCATE_OVERLAY
+        call LOAD_OVERLAY
+        call PRINT_EOF
+        mov si, offset overlay_2_name
+        call PATH_BEGIN
+        call LOCATE_OVERLAY
+        call LOAD_OVERLAY
 
-    main_exit:
+    main_end:
         xor al, al
         mov ah, 4ch
         int 21h
