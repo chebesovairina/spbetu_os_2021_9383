@@ -29,11 +29,11 @@ CODE SEGMENT
         SHIFT db 0
         int_signature dw 7777h
         keep_ip dw 0
-        keep_cs dw 0
+        keep_cs dw 0		
+		psp_address dw ?
         keep_ss dw 0
         keep_sp dw 0
         keep_ax dw 0
-		psp_address dw ?
         int_stack dw 64 dup(?)
 
     int_start:
@@ -63,17 +63,17 @@ CODE SEGMENT
         in AL, 60h 
         cmp AL, 10h
         je symbol_q 
-        cmp AL, 11h
-        je symbol_w
+        cmp AL, 19h
+        je symbol_p
         mov KEY, 1h
         jmp int_end
 
     symbol_q:
-        mov AL, 'a'
+        mov AL, 'p'
         jmp change
     
-    symbol_w:
-        mov AL, 'z'
+    symbol_p:
+        mov AL, 'q'
         jmp change
 
     change:
